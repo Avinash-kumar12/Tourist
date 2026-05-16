@@ -1,0 +1,269 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #FFF7ED;
+  --color-brand-100: #FFEDD5;
+  --color-brand-200: #FED7AA;
+  --color-brand-300: #FDBA74;
+  --color-brand-400: #FB923C;
+  --color-brand-500: #DD6B20;
+  --color-brand-600: #C05621;
+  --color-brand-700: #9C4221;
+  --color-brand-800: #7C2D12;
+  --color-brand-900: #6C2710;
+
+  --color-sand-50: #FFFBF5;
+  --color-sand-100: #FEF3E2;
+  --color-sand-200: #FDE8C8;
+  --color-sand-300: #FBD5A0;
+
+  --color-warm-gray-50: #FAF9F7;
+  --color-warm-gray-100: #F5F3EF;
+  --color-warm-gray-200: #E8E4DE;
+  --color-warm-gray-300: #D6D0C6;
+  --color-warm-gray-400: #A8A08F;
+  --color-warm-gray-500: #78716C;
+  --color-warm-gray-600: #57534E;
+  --color-warm-gray-700: #44403C;
+  --color-warm-gray-800: #292524;
+  --color-warm-gray-900: #1C1917;
+
+  --color-success-50: #ECFDF5;
+  --color-success-500: #10B981;
+  --color-success-600: #059669;
+
+  --color-error-50: #FEF2F2;
+  --color-error-500: #EF4444;
+  --color-error-600: #DC2626;
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Outfit', system-ui, sans-serif;
+}
+
+/* ========================
+   BASE
+   ======================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-sand-50);
+  color: var(--color-warm-gray-800);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+}
+
+::selection {
+  background: var(--color-brand-100);
+  color: var(--color-brand-800);
+}
+
+/* ========================
+   SCROLLBAR
+   ======================== */
+::-webkit-scrollbar { width: 7px; }
+::-webkit-scrollbar-track { background: var(--color-warm-gray-100); }
+::-webkit-scrollbar-thumb { background: var(--color-warm-gray-300); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-warm-gray-400); }
+
+/* ========================
+   CARDS
+   ======================== */
+.card {
+  background: #FFFFFF;
+  border: 1px solid var(--color-warm-gray-200);
+  border-radius: 14px;
+  transition: box-shadow 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+}
+.card:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04);
+  border-color: var(--color-warm-gray-300);
+}
+
+.card-interactive {
+  background: #FFFFFF;
+  border: 1px solid var(--color-warm-gray-200);
+  border-radius: 14px;
+  transition: box-shadow 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+  cursor: pointer;
+}
+.card-interactive:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+  border-color: var(--color-brand-200);
+  transform: translateY(-2px);
+}
+
+/* ========================
+   BUTTONS
+   ======================== */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--color-brand-600);
+  color: #FFFFFF;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  font-size: 0.9375rem;
+  letter-spacing: 0.01em;
+}
+.btn-primary:hover {
+  background: var(--color-brand-700);
+  box-shadow: 0 4px 16px rgba(192, 86, 33, 0.25);
+}
+.btn-primary:active {
+  transform: scale(0.98);
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: transparent;
+  color: var(--color-brand-700);
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  border: 1.5px solid var(--color-brand-200);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  font-size: 0.9375rem;
+}
+.btn-secondary:hover {
+  background: var(--color-brand-50);
+  border-color: var(--color-brand-400);
+}
+
+.btn-accent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--color-brand-500);
+  color: #FFFFFF;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  font-size: 0.9375rem;
+}
+.btn-accent:hover {
+  background: var(--color-brand-600);
+  box-shadow: 0 4px 16px rgba(221, 107, 32, 0.25);
+}
+
+/* ========================
+   INPUTS
+   ======================== */
+.input-field {
+  background: #FFFFFF;
+  border: 1.5px solid var(--color-warm-gray-200);
+  color: var(--color-warm-gray-800);
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
+  font-size: 0.9375rem;
+}
+.input-field:focus {
+  outline: none;
+  border-color: var(--color-brand-400);
+  box-shadow: 0 0 0 3px rgba(221, 107, 32, 0.1);
+}
+.input-field::placeholder {
+  color: var(--color-warm-gray-400);
+}
+
+/* Keep input-dark class name for backward compat */
+.input-dark {
+  background: #FFFFFF;
+  border: 1.5px solid var(--color-warm-gray-200);
+  color: var(--color-warm-gray-800);
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
+  font-size: 0.9375rem;
+}
+.input-dark:focus {
+  outline: none;
+  border-color: var(--color-brand-400);
+  box-shadow: 0 0 0 3px rgba(221, 107, 32, 0.1);
+}
+.input-dark::placeholder {
+  color: var(--color-warm-gray-400);
+}
+
+/* ========================
+   BADGES / TAGS
+   ======================== */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.875rem;
+  border-radius: 100px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  background: var(--color-sand-100);
+  color: var(--color-brand-700);
+  border: 1px solid var(--color-sand-200);
+}
+
+/* ========================
+   SECTION
+   ======================== */
+.section-warm {
+  background: var(--color-sand-100);
+}
+
+/* ========================
+   ANIMATIONS  (subtle only)
+   ======================== */
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-slide-up { animation: slide-up 0.5s ease-out both; }
+.animate-fade-in { animation: fade-in 0.35s ease-out both; }
+
+/* ========================
+   NAVBAR
+   ======================== */
+.navbar {
+  background: rgba(255, 251, 245, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-warm-gray-200);
+}
+
+/* ========================
+   UTILITY: accent underline for headings
+   ======================== */
+.heading-accent {
+  color: var(--color-brand-600);
+}
