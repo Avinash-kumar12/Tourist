@@ -39,6 +39,87 @@ const ChatAssistant = () => {
     } finally { setLoading(false); }
   };
 
+  const renderMessageContent = (text) => {
+    if (!text) return null;
+
+    const lines = text.split('\n');
+    const elements = [];
+    let listItems = [];
+
+    const flushList = (key) => {
+      if (listItems.length > 0) {
+        elements.push(
+          <ul key={`list-${key}`} className="list-disc pl-5 my-1.5 space-y-1">
+            {listItems}
+          </ul>
+        );
+        listItems = [];
+      }
+    };
+
+    const parseInline = (inlineText) => {
+      const parts = inlineText.split(/(\*\*.*?\*\*)/g);
+      return parts.map((part, index) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return <strong key={index} className="font-semibold text-warm-gray-900">{part.slice(2, -2)}</strong>;
+        }
+        return part;
+      });
+    };
+
+    lines.forEach((line, index) => {
+      const trimmedLine = line.trim();
+
+      if (trimmedLine.startsWith('###')) {
+        flushList(index);
+        const headingContent = trimmedLine.replace(/^###\s*/, '');
+        elements.push(
+          <h3 key={index} className="text-base font-bold text-warm-gray-900 mt-3 mb-1">
+            {parseInline(headingContent)}
+          </h3>
+        );
+      } else if (trimmedLine.startsWith('##')) {
+        flushList(index);
+        const headingContent = trimmedLine.replace(/^##\s*/, '');
+        elements.push(
+          <h2 key={index} className="text-lg font-bold text-warm-gray-900 mt-4 mb-1.5">
+            {parseInline(headingContent)}
+          </h2>
+        );
+      } else if (trimmedLine.startsWith('#')) {
+        flushList(index);
+        const headingContent = trimmedLine.replace(/^#\s*/, '');
+        elements.push(
+          <h1 key={index} className="text-xl font-bold text-warm-gray-900 mt-5 mb-2">
+            {parseInline(headingContent)}
+          </h1>
+        );
+      } else if (trimmedLine.startsWith('* ') || trimmedLine.startsWith('- ') || trimmedLine.startsWith('• ')) {
+        const bulletContent = trimmedLine.replace(/^[*•-]\s*/, '');
+        listItems.push(
+          <li key={`li-${index}`} className="text-warm-gray-700 leading-relaxed">
+            {parseInline(bulletContent)}
+          </li>
+        );
+      } else if (trimmedLine === '') {
+        flushList(index);
+        if (elements.length > 0 && elements[elements.length - 1]?.type !== 'div') {
+          elements.push(<div key={index} className="h-1.5" />);
+        }
+      } else {
+        flushList(index);
+        elements.push(
+          <p key={index} className="text-warm-gray-700 leading-relaxed my-1">
+            {parseInline(line)}
+          </p>
+        );
+      }
+    });
+
+    flushList(lines.length);
+    return elements;
+  };
+
   return (
     <div className="min-h-screen pt-20 pb-4 px-4 sm:px-6 lg:px-8 flex flex-col" id="chat-page">
       <div className="max-w-3xl mx-auto w-full flex flex-col flex-1">
@@ -79,7 +160,11 @@ const ChatAssistant = () => {
                   ? 'bg-brand-600 text-white rounded-br-md'
                   : 'bg-white border border-warm-gray-200 text-warm-gray-700 rounded-bl-md'
               }`}>
-                <p className="whitespace-pre-wrap">{msg.content}</p>
+                {msg.role === 'user' ? (
+                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                ) : (
+                  <div className="space-y-1">{renderMessageContent(msg.content)}</div>
+                )}
               </div>
               {msg.role === 'user' && (
                 <div className="w-8 h-8 rounded-lg bg-warm-gray-200 flex items-center justify-center flex-shrink-0">

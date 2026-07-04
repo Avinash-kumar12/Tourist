@@ -137,7 +137,8 @@ const getMyRequests = async (req, res, next) => {
   try {
     const buddy = await TouristBuddy.findOne({ user: req.user._id });
     if (!buddy) {
-      return res.status(404).json({ message: 'Guide profile not found' });
+      // Return empty array instead of 404 to prevent dashboard page from crashing
+      return res.json([]);
     }
 
     const bookings = await Booking.find({ buddy: buddy._id })
@@ -200,6 +201,18 @@ const getMyBookings = async (req, res, next) => {
   }
 };
 
+// @desc    Get current guide profile
+// @route   GET /api/buddies/profile/me
+const getMyProfile = async (req, res, next) => {
+  try {
+    const buddy = await TouristBuddy.findOne({ user: req.user._id })
+      .populate('user', 'name email avatar');
+    res.json(buddy);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getBuddies,
   getBuddyById,
@@ -208,5 +221,6 @@ module.exports = {
   sendRequest,
   getMyRequests,
   updateRequestStatus,
-  getMyBookings
+  getMyBookings,
+  getMyProfile
 };

@@ -28,6 +28,7 @@ export const chatWithAI = (messages) => API.post('/chat', { messages });
 // Buddies
 export const getBuddies = (params) => API.get('/buddies', { params });
 export const getBuddyById = (id) => API.get(`/buddies/profile/${id}`);
+export const getMyBuddyProfile = () => API.get('/buddies/profile/me');
 export const upsertBuddyProfile = (data) => API.post('/buddies/profile', data);
 export const toggleAvailability = () => API.patch('/buddies/availability');
 export const sendBuddyRequest = (data) => API.post('/buddies/request', data);

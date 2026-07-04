@@ -8,7 +8,8 @@ const {
   sendRequest,
   getMyRequests,
   updateRequestStatus,
-  getMyBookings
+  getMyBookings,
+  getMyProfile
 } = require('../controllers/buddyController');
 const { protect, authorize } = require('../middlewares/auth');
 
@@ -21,6 +22,7 @@ router.post('/request', protect, authorize('tourist'), sendRequest);
 router.get('/my-bookings', protect, authorize('tourist'), getMyBookings);
 
 // Guide routes
+router.get('/profile/me', protect, authorize('guide'), getMyProfile);
 router.post('/profile', protect, authorize('guide'), upsertProfile);
 router.patch('/availability', protect, authorize('guide'), toggleAvailability);
 router.get('/requests', protect, authorize('guide'), getMyRequests);

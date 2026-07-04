@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const path = require('path');
 const TravelKnowledge = require('../models/TravelKnowledge');
+const User = require('../models/User');
+const TouristBuddy = require('../models/TouristBuddy');
 
 // Load environment variables from backend directory
 dotenv.config({ path: path.join(__dirname, '../.env') });
@@ -386,16 +388,56 @@ How can I help you explore India today?`,
 
 const seedDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
+    await mongoose.connect(process.env.MONGO_URI || process.env.MONGO_URL);
     console.log('✅ Connected to MongoDB for seeding...');
 
     // Clear existing travel knowledge records
     await TravelKnowledge.deleteMany({});
     console.log('🧹 Cleared existing TravelKnowledge collection.');
 
-    // Seed data
+    // Seed travel knowledge
     await TravelKnowledge.insertMany(seedData);
     console.log('🌱 Successfully seeded TravelKnowledge collection with local NLP resources!');
+
+    // Clear and Seed real guide users and profiles
+    console.log('🧹 Cleaning up mock guide user and buddy accounts...');
+    await TouristBuddy.deleteMany({});
+    await User.deleteMany({ email: { $regex: /@touristbuddy\.com$/i } });
+
+    const guidesData = [
+      { name: 'Rajesh Kumar', email: 'rajesh@touristbuddy.com', city: 'Jaipur', languages: ['Hindi', 'English', 'French'], pricePerDay: 1500, rating: 4.8, totalReviews: 42, bio: 'Born and raised in Jaipur. I know every hidden gem in the Pink City!', specialties: ['Heritage Walks', 'Food Tours', 'Photography'], experience: 5, isAvailable: true, isVerified: true },
+      { name: 'Priya Sharma', email: 'priya@touristbuddy.com', city: 'Delhi', languages: ['Hindi', 'English'], pricePerDay: 2000, rating: 4.9, totalReviews: 67, bio: 'History enthusiast and certified guide. Let me show you the real Delhi!', specialties: ['Historical Tours', 'Street Food', 'Markets'], experience: 8, isAvailable: true, isVerified: true },
+      { name: 'Arjun Nair', email: 'arjun@touristbuddy.com', city: 'Goa', languages: ['English', 'Hindi', 'Konkani'], pricePerDay: 1800, rating: 4.7, totalReviews: 35, bio: 'Beach lover and adventure guide. From hidden beaches to best nightlife spots.', specialties: ['Beach Tours', 'Water Sports', 'Nightlife'], experience: 4, isAvailable: true, isVerified: false },
+      { name: 'Meera Patel', email: 'meera@touristbuddy.com', city: 'Varanasi', languages: ['Hindi', 'English', 'Sanskrit'], pricePerDay: 1200, rating: 4.6, totalReviews: 28, bio: 'Spiritual guide specializing in temple tours and Ganga Aarti experiences.', specialties: ['Temple Tours', 'Spiritual Walks', 'Yoga'], experience: 6, isAvailable: true, isVerified: true },
+      { name: 'Vikram Singh', email: 'vikram@touristbuddy.com', city: 'Mumbai', languages: ['Hindi', 'English', 'Marathi'], pricePerDay: 2500, rating: 4.5, totalReviews: 53, bio: 'Bollywood insider and city explorer. Experience Mumbai like a local!', specialties: ['Bollywood Tours', 'Street Food', 'Nightlife'], experience: 7, isAvailable: true, isVerified: true },
+      { name: 'Ananya Reddy', email: 'ananya@touristbuddy.com', city: 'Agra', languages: ['Hindi', 'English', 'Telugu'], pricePerDay: 1000, rating: 4.4, totalReviews: 19, bio: 'Taj Mahal expert. I\'ll help you capture the perfect sunrise shot!', specialties: ['Photography', 'History', 'Architecture'], experience: 3, isAvailable: false, isVerified: false }
+    ];
+
+    for (const guide of guidesData) {
+      // Create user with standard password
+      const user = await User.create({
+        name: guide.name,
+        email: guide.email,
+        password: 'password123',
+        role: 'guide'
+      });
+
+      // Create buddy profile linked to user
+      await TouristBuddy.create({
+        user: user._id,
+        city: guide.city,
+        languages: guide.languages,
+        pricePerDay: guide.pricePerDay,
+        rating: guide.rating,
+        totalReviews: guide.totalReviews,
+        bio: guide.bio,
+        specialties: guide.specialties,
+        experience: guide.experience,
+        isAvailable: guide.isAvailable,
+        isVerified: guide.isVerified
+      });
+    }
+    console.log('👥 Successfully seeded mock guide users and profiles!');
 
     process.exit(0);
   } catch (error) {

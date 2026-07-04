@@ -1,5 +1,28 @@
 const natural = require('natural');
 const TravelKnowledge = require('../models/TravelKnowledge');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+
+// Initialize Gemini API client if the API key is present
+const apiKey = process.env.GEMINI_API_KEY;
+let genAI = null;
+let aiModel = null;
+let chatModel = null;
+
+if (apiKey && apiKey !== 'your_gemini_api_key_here' && apiKey.trim() !== '') {
+  try {
+    genAI = new GoogleGenerativeAI(apiKey);
+    aiModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    chatModel = genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      systemInstruction: "You are TouristBuddy, an AI-powered travel assistant specializing in travel across India. Provide helpful, structured, and warm advice about sightseeing, street food, budget estimations, safety precautions, and local culture. Keep your answers concise and readable with bullet points. Answer directly in markdown."
+    });
+    console.log('🤖 Google Gemini AI Client initialized successfully for TravelCompanion.');
+  } catch (err) {
+    console.error('❌ Gemini Client Init Error:', err.message);
+  }
+} else {
+  console.log('⚠️ GEMINI_API_KEY missing or placeholder. Running in local database fallback mode.');
+}
 
 /**
  * Generate a local database-driven itinerary using string similarity matching
@@ -8,6 +31,77 @@ const generateItinerary = async (destination, days, budget, interests) => {
   try {
     const targetDest = destination.trim().toLowerCase();
 
+    // ----------------------------------------------------
+    // GEMINI DYNAMIC GENERATOR (PREFERED)
+    // ----------------------------------------------------
+    if (aiModel) {
+      try {
+        console.log(`🤖 Requesting dynamic travel plan from Gemini for: ${destination} (${days} days)`);
+        const prompt = `
+        Generate a detailed day-by-day travel itinerary for a trip to: ${destination}.
+        Duration: ${days} days.
+        Budget level: ${budget}.
+        Interests: ${interests.join(', ')}.
+
+        You MUST output ONLY a valid JSON object matching the following structure (no markdown formatting, no comments, no backticks, just raw JSON):
+        {
+          "title": "A catchy title for the trip",
+          "destination": "Destination name",
+          "summary": "A 2-3 sentence overview of the trip and what makes it special",
+          "days": [
+            {
+              "dayNumber": 1,
+              "theme": "Theme of the day (e.g. Historic Exploration)",
+              "activities": [
+                {
+                  "time": "09:30 AM",
+                  "location": "Name of the attraction",
+                  "description": "Short description of what to do there (2 sentences)",
+                  "estimatedCost": "Approximate cost in INR e.g. ₹50 or Free",
+                  "tips": "A helpful tip for visiting this spot",
+                  "coordinates": {
+                    "lat": 26.9124, 
+                    "lng": 75.7873
+                  }
+                }
+              ]
+            }
+          ],
+          "totalEstimatedBudget": "Approximate total budget in INR e.g. ₹5,000",
+          "packingTips": ["Tip 1", "Tip 2"],
+          "bestTimeToVisit": "Best months to visit e.g. October to March"
+        }
+
+        Provide actual, realistic latitude and longitude values for the locations in India.
+        `;
+
+        const result = await aiModel.generateContent({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: "application/json"
+          }
+        });
+
+        const responseText = result.response.text();
+        const parsedItinerary = JSON.parse(responseText);
+
+        return {
+          title: parsedItinerary.title || `${days}-Day Trip to ${parsedItinerary.destination || destination}`,
+          destination: parsedItinerary.destination || destination,
+          summary: parsedItinerary.summary,
+          days: parsedItinerary.days,
+          totalEstimatedBudget: parsedItinerary.totalEstimatedBudget,
+          packingTips: parsedItinerary.packingTips || ["Walking shoes", "Water bottle"],
+          bestTimeToVisit: parsedItinerary.bestTimeToVisit || "October to March"
+        };
+      } catch (geminiErr) {
+        console.error('⚠️ Gemini generation failed, falling back to database matching:', geminiErr.message);
+      }
+    }
+
+    // ----------------------------------------------------
+    // LOCAL DATABASE FALLBACK
+    // ----------------------------------------------------
     // Fetch all destination knowledges
     const records = await TravelKnowledge.find({ category: 'destination' });
 
@@ -32,7 +126,7 @@ const generateItinerary = async (destination, days, budget, interests) => {
       }
     }
 
-    // If we have a good match, reconstruct the itinerary
+    // If we have a good match, reconstruct the itinerary from seeded data
     if (bestMatch && bestScore >= 0.75 && bestMatch.itinerary.length > 0) {
       const parsedDays = bestMatch.itinerary.map(dayStr => JSON.parse(dayStr));
       const selectedDays = [];
@@ -64,7 +158,7 @@ const generateItinerary = async (destination, days, budget, interests) => {
       };
     }
 
-    // Dynamic Fallback Generator for unknown destinations
+    // Dynamic Fallback Generator for unknown destinations (offline fallback)
     const capitalizedDest = destination.charAt(0).toUpperCase() + destination.slice(1);
     const selectedDays = [];
 
@@ -128,6 +222,36 @@ const chatWithAssistant = async (messages) => {
       return "Hello! How can I help you today?";
     }
 
+    // ----------------------------------------------------
+    // GEMINI DYNAMIC CHAT (PREFERED)
+    // ----------------------------------------------------
+    if (chatModel) {
+      try {
+        console.log(`🤖 Requesting chat response from Gemini for message: "${lastUserMessage.substring(0, 40)}..."`);
+        
+        // Map message history to Gemini format
+        const history = messages.slice(0, -1).map(msg => ({
+          role: msg.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: msg.content }]
+        }));
+
+        const chat = chatModel.startChat({
+          history: history,
+          generationConfig: {
+            maxOutputTokens: 1000,
+          },
+        });
+
+        const result = await chat.sendMessage(lastUserMessage);
+        return result.response.text();
+      } catch (geminiErr) {
+        console.error('⚠️ Gemini Chat failed, falling back to local database search:', geminiErr.message);
+      }
+    }
+
+    // ----------------------------------------------------
+    // LOCAL DATABASE FALLBACK
+    // ----------------------------------------------------
     const cleanedMessage = lastUserMessage.toLowerCase();
 
     // Fetch all matching records from the database

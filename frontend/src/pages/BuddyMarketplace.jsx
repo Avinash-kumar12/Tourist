@@ -50,17 +50,6 @@ const BuddyMarketplace = () => {
     setBookingLoading(false);
   };
 
-  const mockBuddies = [
-    { _id: '1', user: { name: 'Rajesh Kumar' }, city: 'Jaipur', languages: ['Hindi', 'English', 'French'], pricePerDay: 1500, rating: 4.8, totalReviews: 42, bio: 'Born and raised in Jaipur. I know every hidden gem in the Pink City!', specialties: ['Heritage Walks', 'Food Tours', 'Photography'], experience: 5, isAvailable: true, isVerified: true },
-    { _id: '2', user: { name: 'Priya Sharma' }, city: 'Delhi', languages: ['Hindi', 'English'], pricePerDay: 2000, rating: 4.9, totalReviews: 67, bio: 'History enthusiast and certified guide. Let me show you the real Delhi!', specialties: ['Historical Tours', 'Street Food', 'Markets'], experience: 8, isAvailable: true, isVerified: true },
-    { _id: '3', user: { name: 'Arjun Nair' }, city: 'Goa', languages: ['English', 'Hindi', 'Konkani'], pricePerDay: 1800, rating: 4.7, totalReviews: 35, bio: 'Beach lover and adventure guide. From hidden beaches to best nightlife spots.', specialties: ['Beach Tours', 'Water Sports', 'Nightlife'], experience: 4, isAvailable: true, isVerified: false },
-    { _id: '4', user: { name: 'Meera Patel' }, city: 'Varanasi', languages: ['Hindi', 'English', 'Sanskrit'], pricePerDay: 1200, rating: 4.6, totalReviews: 28, bio: 'Spiritual guide specializing in temple tours and Ganga Aarti experiences.', specialties: ['Temple Tours', 'Spiritual Walks', 'Yoga'], experience: 6, isAvailable: true, isVerified: true },
-    { _id: '5', user: { name: 'Vikram Singh' }, city: 'Mumbai', languages: ['Hindi', 'English', 'Marathi'], pricePerDay: 2500, rating: 4.5, totalReviews: 53, bio: 'Bollywood insider and city explorer. Experience Mumbai like a local!', specialties: ['Bollywood Tours', 'Street Food', 'Nightlife'], experience: 7, isAvailable: true, isVerified: true },
-    { _id: '6', user: { name: 'Ananya Reddy' }, city: 'Agra', languages: ['Hindi', 'English', 'Telugu'], pricePerDay: 1000, rating: 4.4, totalReviews: 19, bio: 'Taj Mahal expert. I\'ll help you capture the perfect sunrise shot!', specialties: ['Photography', 'History', 'Architecture'], experience: 3, isAvailable: false, isVerified: false },
-  ];
-
-  const displayBuddies = buddies.length > 0 ? buddies : mockBuddies;
-
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8" id="buddies-page">
       <div className="max-w-6xl mx-auto">
@@ -90,13 +79,21 @@ const BuddyMarketplace = () => {
         </form>
 
         {loading ? <Loading text="Finding guides..." /> : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {displayBuddies.map((buddy, i) => (
-              <div key={buddy._id} style={{ animationDelay: `${i * 0.08}s` }}>
-                <BuddyCard buddy={buddy} onConnect={handleConnect} />
-              </div>
-            ))}
-          </div>
+          buddies.length === 0 ? (
+            <div className="card p-12 text-center" id="no-guides">
+              <Users className="w-14 h-14 text-warm-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-warm-gray-800 mb-2">No guides registered yet</h3>
+              <p className="text-warm-gray-500 mb-4">Run the database seed script or sign up as a guide to add listings!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {buddies.map((buddy, i) => (
+                <div key={buddy._id} style={{ animationDelay: `${i * 0.08}s` }}>
+                  <BuddyCard buddy={buddy} onConnect={handleConnect} />
+                </div>
+              ))}
+            </div>
+          )
         )}
 
         {showBooking && (
