@@ -1,108 +1,190 @@
-const Anthropic = require('@anthropic-ai/sdk');
-
-const client = new Anthropic.default({
-  apiKey: process.env.ANTHROPIC_API_KEY
-});
+const natural = require('natural');
+const TravelKnowledge = require('../models/TravelKnowledge');
 
 /**
- * Generate a day-wise itinerary using Claude
+ * Generate a local database-driven itinerary using string similarity matching
  */
 const generateItinerary = async (destination, days, budget, interests) => {
-  const prompt = `You are an expert travel planner specializing in India. Create a detailed, day-by-day itinerary for a ${days}-day trip to ${destination}, India.
-
-Budget level: ${budget}
-Interests: ${interests.join(', ')}
-
-IMPORTANT: Return ONLY valid JSON. No markdown, no explanations, no backticks. Just pure JSON.
-
-The JSON structure must be:
-{
-  "title": "A catchy title for this trip",
-  "destination": "${destination}",
-  "summary": "A brief 2-sentence trip summary",
-  "days": [
-    {
-      "dayNumber": 1,
-      "theme": "Theme for the day",
-      "activities": [
-        {
-          "time": "9:00 AM",
-          "location": "Place name",
-          "description": "What to do here",
-          "estimatedCost": "₹500",
-          "tips": "Any helpful tips",
-          "coordinates": { "lat": 0.0, "lng": 0.0 }
-        }
-      ]
-    }
-  ],
-  "totalEstimatedBudget": "₹XX,XXX",
-  "packingTips": ["tip1", "tip2"],
-  "bestTimeToVisit": "Month range"
-}
-
-Include real coordinates for Google Maps. Include 3-5 activities per day. Make costs realistic for India in INR.`;
-
   try {
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4096,
-      messages: [{ role: 'user', content: prompt }]
-    });
+    const targetDest = destination.trim().toLowerCase();
 
-    const text = response.content[0].text;
+    // Fetch all destination knowledges
+    const records = await TravelKnowledge.find({ category: 'destination' });
 
-    // Try to parse the JSON from the response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+    let bestMatch = null;
+    let bestScore = 0;
+
+    for (const record of records) {
+      const keyword = record.keyword.toLowerCase();
+
+      // Direct exact match
+      if (targetDest === keyword || targetDest.includes(keyword)) {
+        bestMatch = record;
+        bestScore = 1.0;
+        break;
+      }
+
+      // Jaro-Winkler similarity check
+      const score = natural.JaroWinklerDistance(keyword, targetDest, { ignoreCase: true });
+      if (score > bestScore) {
+        bestScore = score;
+        bestMatch = record;
+      }
     }
 
-    return JSON.parse(text);
+    // If we have a good match, reconstruct the itinerary
+    if (bestMatch && bestScore >= 0.75 && bestMatch.itinerary.length > 0) {
+      const parsedDays = bestMatch.itinerary.map(dayStr => JSON.parse(dayStr));
+      const selectedDays = [];
+
+      for (let i = 0; i < days; i++) {
+        // Cycle through database days if requested days exceeds database itinerary length
+        const dayTemplate = parsedDays[i % parsedDays.length];
+        selectedDays.push({
+          ...dayTemplate,
+          dayNumber: i + 1
+        });
+      }
+
+      const totalCostNum = days * (budget === 'budget' ? 1200 : budget === 'moderate' ? 2000 : 4500);
+
+      return {
+        title: bestMatch.title || `${days}-Day Trip to ${bestMatch.title}`,
+        destination: bestMatch.title.replace('Itinerary', '').replace('Tour', '').trim(),
+        summary: bestMatch.responseMarkdown,
+        days: selectedDays,
+        totalEstimatedBudget: `₹${totalCostNum.toLocaleString('en-IN')}`,
+        packingTips: [
+          "Comfortable walking shoes",
+          "Sunscreen & sunglasses",
+          "Water bottle",
+          "Appropriate cultural clothing for monuments"
+        ],
+        bestTimeToVisit: "October to March"
+      };
+    }
+
+    // Dynamic Fallback Generator for unknown destinations
+    const capitalizedDest = destination.charAt(0).toUpperCase() + destination.slice(1);
+    const selectedDays = [];
+
+    for (let i = 0; i < days; i++) {
+      selectedDays.push({
+        dayNumber: i + 1,
+        theme: `Exploring Landmarks of ${capitalizedDest}`,
+        activities: [
+          {
+            time: "09:30 AM",
+            location: `Popular Attraction in ${capitalizedDest}`,
+            description: `Start your day by visiting one of the most famous landmarks in ${capitalizedDest}.`,
+            estimatedCost: "₹150",
+            tips: "Visit early morning to avoid peak tourist crowds.",
+            coordinates: { lat: 20.0 + (i * 0.15), lng: 77.0 + (i * 0.15) }
+          },
+          {
+            time: "01:00 PM",
+            location: "Local Traditional Diner",
+            description: `Savor the authentic local cuisine and traditional dishes of ${capitalizedDest}.`,
+            estimatedCost: "₹250",
+            tips: "Ask locals for their favorite recommendation.",
+            coordinates: { lat: 20.05 + (i * 0.15), lng: 77.05 + (i * 0.15) }
+          },
+          {
+            time: "05:00 PM",
+            location: "Scenic Sunset Point",
+            description: "Unwind at a beautiful viewpoint watching the sunset over the city.",
+            estimatedCost: "Free",
+            tips: "Arrive 30 minutes early to capture the perfect view.",
+            coordinates: { lat: 20.1 + (i * 0.15), lng: 77.1 + (i * 0.15) }
+          }
+        ]
+      });
+    }
+
+    const totalCostNum = days * (budget === 'budget' ? 1000 : budget === 'moderate' ? 1800 : 4000);
+
+    return {
+      title: `${days}-Day Explorer Trip to ${capitalizedDest}`,
+      destination: capitalizedDest,
+      summary: `A dynamically generated itinerary highlighting the landmarks, local food, and views in ${capitalizedDest}.`,
+      days: selectedDays,
+      totalEstimatedBudget: `₹${totalCostNum.toLocaleString('en-IN')}`,
+      packingTips: ["Walking shoes", "Travel guide", "Camera", "Local currency cash"],
+      bestTimeToVisit: "November to February"
+    };
   } catch (error) {
-    console.error('AI Itinerary Error:', error.message);
+    console.error('Local Itinerary Generation Error:', error);
     throw new Error('Failed to generate itinerary. Please try again.');
   }
 };
 
 /**
- * Chat assistant for Indian travel queries
+ * Chat assistant matching user questions against travelknowledges using Jaro-Winkler string similarity
  */
 const chatWithAssistant = async (messages) => {
-  const systemPrompt = `You are "AI Travel Companion India", a helpful and knowledgeable assistant specializing in Indian tourism.
-
-Your expertise covers:
-- Tourist destinations across all Indian states
-- Cultural practices, festivals, and local customs
-- Transportation options (trains, flights, buses, auto-rickshaws)
-- Food recommendations and dietary considerations
-- Safety tips for travelers
-- Budget planning and money-saving tips
-- Visa and documentation requirements
-- Weather and best times to visit
-
-Guidelines:
-- Keep responses concise, friendly, and informative
-- Use Indian currency (INR/₹) for prices
-- If asked about local guides, recommend the "Tourist Buddy" feature in this app
-- Include practical tips that only a local would know
-- Be culturally sensitive and respectful`;
-
   try {
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages: messages.map(m => ({
-        role: m.role,
-        content: m.content
-      }))
-    });
+    const lastUserMessage = messages.slice().reverse().find(m => m.role === 'user')?.content || '';
+    if (!lastUserMessage.trim()) {
+      return "Hello! How can I help you today?";
+    }
 
-    return response.content[0].text;
+    const cleanedMessage = lastUserMessage.toLowerCase();
+
+    // Fetch all matching records from the database
+    const knowledges = await TravelKnowledge.find({});
+
+    const tokenizer = new natural.WordTokenizer();
+    const tokens = tokenizer.tokenize(cleanedMessage);
+
+    let bestMatch = null;
+    let bestScore = 0;
+
+    for (const record of knowledges) {
+      const keyword = record.keyword.toLowerCase();
+
+      // 1. Direct substring match (highest priority)
+      if (cleanedMessage.includes(keyword)) {
+        bestMatch = record;
+        bestScore = 1.0;
+        break; // Exit early on direct keyword match
+      }
+
+      // 2. Token-level similarity match
+      for (const token of tokens) {
+        const score = natural.JaroWinklerDistance(keyword, token, { ignoreCase: true });
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = record;
+        }
+      }
+
+      // 3. Sentence-level similarity match
+      const fullScore = natural.JaroWinklerDistance(keyword, cleanedMessage, { ignoreCase: true });
+      if (fullScore > bestScore) {
+        bestScore = fullScore;
+        bestMatch = record;
+      }
+    }
+
+    // Threshold check
+    if (bestMatch && bestScore >= 0.75) {
+      return bestMatch.responseMarkdown;
+    }
+
+    // Default Fallback Response
+    return `Namaste! 🙏 I'm not completely sure about that. I can provide travel information regarding **Delhi, Mumbai, Jaipur, Goa, Varanasi, and Agra**. 
+
+You can also ask me about:
+- **Food**: Street food tips & regional specialties.
+- **Budget**: Travel costs & daily expense estimations.
+- **Safety**: Travel precautions & solo traveler tips.
+- **Temples**: Spiritual sites & dress codes.
+- **Beaches**: Coastal locations & beach guides.
+
+*Tip: Try asking about a specific city or topic like "tell me about food in Delhi"!*`;
   } catch (error) {
-    console.error('AI Chat Error:', error.message);
-    throw new Error('Chat assistant is unavailable. Please try again.');
+    console.error('Local Chat Match Error:', error);
+    throw new Error('Chat assistant is currently offline. Please try again.');
   }
 };
 

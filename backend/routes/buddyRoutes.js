@@ -17,13 +17,13 @@ router.get('/', getBuddies);
 router.get('/profile/:id', getBuddyById);
 
 // Tourist routes
-router.post('/request', protect, sendRequest);
-router.get('/my-bookings', protect, getMyBookings);
+router.post('/request', protect, authorize('tourist'), sendRequest);
+router.get('/my-bookings', protect, authorize('tourist'), getMyBookings);
 
 // Guide routes
-router.post('/profile', protect, upsertProfile);
-router.patch('/availability', protect, toggleAvailability);
-router.get('/requests', protect, getMyRequests);
-router.patch('/requests/:id', protect, updateRequestStatus);
+router.post('/profile', protect, authorize('guide'), upsertProfile);
+router.patch('/availability', protect, authorize('guide'), toggleAvailability);
+router.get('/requests', protect, authorize('guide'), getMyRequests);
+router.patch('/requests/:id', protect, authorize('guide'), updateRequestStatus);
 
 module.exports = router;

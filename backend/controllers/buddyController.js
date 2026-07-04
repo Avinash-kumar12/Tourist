@@ -160,9 +160,18 @@ const updateRequestStatus = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid status' });
     }
 
+    const buddy = await TouristBuddy.findOne({ user: req.user._id });
+    if (!buddy) {
+      return res.status(404).json({ message: 'Guide profile not found' });
+    }
+
     const booking = await Booking.findById(req.params.id);
     if (!booking) {
       return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    if (booking.buddy.toString() !== buddy._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to update this booking' });
     }
 
     booking.status = status;

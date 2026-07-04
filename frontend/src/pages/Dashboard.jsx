@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { getMyTrips, deleteTrip, getMyBookings, getMyRequests, updateRequestStatus } from '../services/api';
 import { useNavigate, Link } from 'react-router-dom';
 import Loading from '../components/Loading';
-import { MapPin as Plane, MapPin, Calendar, Trash2, Users, Check, XIcon, Clock, Plus } from 'lucide-react';
+import { Plane, MapPin, Calendar, Trash2, Users, Check, X, Clock, Plus } from 'lucide-react';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -151,7 +151,7 @@ const Dashboard = () => {
                         {r.status === 'pending' ? (
                           <>
                             <button onClick={() => handleRequestAction(r._id, 'accepted')} className="p-2 rounded-lg bg-success-50 text-success-600 hover:bg-green-100 border border-green-100"><Check className="w-4 h-4" /></button>
-                            <button onClick={() => handleRequestAction(r._id, 'rejected')} className="p-2 rounded-lg bg-error-50 text-error-600 hover:bg-red-100 border border-red-100"><XIcon className="w-4 h-4" /></button>
+                            <button onClick={() => handleRequestAction(r._id, 'rejected')} className="p-2 rounded-lg bg-error-50 text-error-600 hover:bg-red-100 border border-red-100"><X className="w-4 h-4" /></button>
                           </>
                         ) : (
                           <span className={`px-3 py-1 rounded-full text-xs font-medium capitalize border ${statusColors[r.status]}`}>{r.status}</span>
