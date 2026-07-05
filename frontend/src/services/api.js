@@ -1,6 +1,22 @@
+// import axios from 'axios';
+
+// const API = axios.create({ baseURL: '/api' });
+
+// // Attach token to every request
+// API.interceptors.request.use((config) => {
+//   const user = JSON.parse(localStorage.getItem('user'));
+//   if (user?.token) {
+//     config.headers.Authorization = `Bearer ${user.token}`;
+//   }
+//   return config;
+// });
+
 import axios from 'axios';
 
-const API = axios.create({ baseURL: '/api' });
+// Looks for the Vite environment variable on Render, or falls back to your local server
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+const API = axios.create({ baseURL: API_BASE_URL });
 
 // Attach token to every request
 API.interceptors.request.use((config) => {
